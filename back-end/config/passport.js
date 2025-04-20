@@ -9,7 +9,6 @@ passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 
-
 // Deserialize user from the session
 passport.deserializeUser(async (id, done) => {
   try {
