@@ -5,18 +5,14 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const passport = require('passport');
 const session = require('express-session');
-const helmet = require('helmet'); // Add this package
-const mongoSanitize = require('express-mongo-sanitize'); // Add this package
-const xss = require('xss-clean'); // Add this package
-const hpp = require('hpp'); // Add this package
-const compression = require('compression'); // Add this package
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+const hpp = require('hpp');
+const compression = require('compression');
 const { errorHandler } = require('./middleware/errorHandler');
 const { apiLimiter } = require('./middleware/rateLimiter');
-
-// Routes
-const authRoutes = require('./routes/auth');
-const googleAuthRoutes = require('./routes/googleAuth');
-const userRoutes = require('./routes/userRoutes');
+const paymentController = require('./controllers/paymentController');
 
 // Load environment variables
 dotenv.config();
@@ -25,18 +21,52 @@ dotenv.config();
 const app = express();
 
 // Security Middleware
-app.use(helmet()); // Set security HTTP headers
+app.use(helmet());
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true
 }));
-app.use(express.json({ limit: '10kb' })); // Limit JSON body size
-app.use(mongoSanitize()); // Prevent MongoDB injection
-app.use(xss()); // Prevent XSS attacks
-app.use(hpp()); // Prevent HTTP Parameter Pollution
+
+// Routes
+const authRoutes = require('./routes/auth');
+const googleAuthRoutes = require('./routes/googleAuth');
+const userRoutes = require('./routes/userRoutes');
+const paymentRoutes = require('./routes/payment'); // Payment routes
+
+// Special handling for Stripe webhook route - this needs raw body for signature verification
+app.post(
+  '/api/payment/webhook', 
+  express.raw({ type: 'application/json' }), 
+  (req, res, next) => {
+    // Store raw body for Stripe webhook verification
+    req.rawBody = req.body;
+    next();
+  },
+  (req, res) => {
+    // Parse the raw body as JSON for our handler
+    if (req.rawBody) {
+      // If rawBody exists, body will be used by the webhook handler
+      try {
+        req.body = JSON.parse(req.rawBody.toString());
+      } catch (err) {
+        console.error('Error parsing webhook payload', err);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+      }
+    }
+    
+    // Process the webhook
+    paymentController.handleStripeWebhook(req, res);
+  }
+);
+
+// Regular middleware for all other routes
+app.use(express.json({ limit: '10kb' }));
+app.use(mongoSanitize());
+app.use(xss());
+app.use(hpp());
 
 // Performance Middleware
-app.use(compression()); // Compress responses
+app.use(compression());
 
 // Set up session with secure configuration
 app.use(session({
@@ -65,6 +95,7 @@ app.use('/api', apiLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/auth/google', googleAuthRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/payment', paymentRoutes); // Add payment routes (except webhook which is handled separately above)
 
 // 404 handler
 app.use('*', (req, res, next) => {
@@ -91,6 +122,7 @@ const connectWithRetry = () => {
       const PORT = process.env.PORT || 5000;
       app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
+        console.log(`Stripe webhook endpoint: http://localhost:${PORT}/api/payment/webhook`);
       });
     })
     .catch(err => {
