@@ -52,7 +52,12 @@ const UserSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
-  }
+  },
+  loginAttempts: {
+    type: Number,
+    default: 0
+  },
+  accountLockedUntil: Date
 }, {
   timestamps: true
 });
@@ -76,6 +81,33 @@ UserSchema.pre('save', async function(next) {
 // Method to compare password
 UserSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Check if account is locked
+UserSchema.methods.isAccountLocked = function() {
+  return this.accountLockedUntil && this.accountLockedUntil > new Date();
+};
+
+// Register failed login attempt
+UserSchema.methods.registerLoginAttempt = async function() {
+  // Increment login attempts
+  this.loginAttempts += 1;
+  
+  // Lock account after 5 failed attempts
+  if (this.loginAttempts >= 5) {
+    // Lock for 15 minutes
+    this.accountLockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+  }
+  
+  await this.save();
+  return;
+};
+
+// Reset login attempts
+UserSchema.methods.resetLoginAttempts = async function() {
+  this.loginAttempts = 0;
+  this.accountLockedUntil = null;
+  await this.save();
 };
 
 module.exports = mongoose.model('User', UserSchema);

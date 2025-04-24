@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import Google from './assets/google.png';
 import { authAPI } from './services/api';
+import config from './config/config';
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -62,6 +63,11 @@ function Login() {
 
   const handleForgotPassword = () => {
     navigate('/email-ver', { state: { forgotPassword: true } });
+  };
+
+  const handleGoogleAuth = () => {
+    // Redirect to Google OAuth URL
+    window.location.href = `${config.apiBaseUrl}/auth/google`;
   };
 
   return (
@@ -142,7 +148,10 @@ function Login() {
           <hr className="flex-grow border-gray-400" />
         </div>
 
-        <button className="w-full flex items-center justify-center gap-2 border rounded-md py-2 bg-white hover:bg-gray-100 transition mb-4">
+        <button 
+          onClick={handleGoogleAuth}
+          className="w-full flex items-center justify-center gap-2 border rounded-md py-2 bg-white hover:bg-gray-100 transition mb-4"
+        >
           <img src={Google} alt="Google" className="w-5 h-5" />
           Continue with Google
         </button>

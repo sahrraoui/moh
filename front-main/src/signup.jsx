@@ -5,6 +5,7 @@ import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import googleIcon from "./assets/google.png";
 import facebookIcon from "./assets/facebook.webp";
 import { authAPI } from './services/api';
+import config from './config/config';
 
 const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -57,6 +58,11 @@ const SignUp = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleAuth = () => {
+    // Redirect to Google OAuth URL
+    window.location.href = `${config.apiBaseUrl}/auth/google`;
   };
 
   return (
@@ -179,7 +185,10 @@ const SignUp = () => {
         </div>
 
         <div className="flex gap-3 mt-2 mb-4">
-          <button className="flex-1 flex items-center justify-center gap-2 border rounded-md py-2 bg-white hover:bg-gray-100 transition">
+          <button 
+            onClick={handleGoogleAuth}
+            className="flex-1 flex items-center justify-center gap-2 border rounded-md py-2 bg-white hover:bg-gray-100 transition"
+          >
             <img src={googleIcon} alt="Google" className="w-6 h-6 object-contain" />
             Google
           </button>

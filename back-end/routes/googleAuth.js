@@ -23,12 +23,25 @@ router.get(
         { expiresIn: '1d' }
       );
 
-      // Redirect to frontend with token
-      const redirectUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/auth/success?token=${token}`;
+      // Prepare user data to send to frontend
+      const userData = {
+        id: req.user._id,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        email: req.user.email,
+        role: req.user.role,
+        profileImage: req.user.profileImage
+      };
+
+      // Encode user data for URL
+      const encodedUserData = encodeURIComponent(JSON.stringify(userData));
+
+      // Redirect to frontend with token and user data
+      const redirectUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/auth/success?token=${token}&googleData=${encodedUserData}`;
       res.redirect(redirectUrl);
     } catch (error) {
       console.error('Error during Google authentication:', error);
-      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=auth_failed`);
+      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=auth_failed&message=${encodeURIComponent(error.message)}`);
     }
   }
 );
