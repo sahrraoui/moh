@@ -60,9 +60,13 @@ const SignUp = () => {
     }
   };
 
-  const handleGoogleAuth = () => {
-    // Redirect to Google OAuth URL
-    window.location.href = `${config.apiBaseUrl}/auth/google`;
+  const handleGoogleSignIn = async () => {
+    try {
+      // Redirect to Google OAuth in the same window
+      window.location.href = config.googleAuthUrl;
+    } catch (err) {
+      setError('Google sign in failed. Please try again.');
+    }
   };
 
   return (
@@ -186,7 +190,7 @@ const SignUp = () => {
 
         <div className="flex gap-3 mt-2 mb-4">
           <button 
-            onClick={handleGoogleAuth}
+            onClick={handleGoogleSignIn}
             className="flex-1 flex items-center justify-center gap-2 border rounded-md py-2 bg-white hover:bg-gray-100 transition"
           >
             <img src={googleIcon} alt="Google" className="w-6 h-6 object-contain" />

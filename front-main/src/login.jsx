@@ -65,9 +65,13 @@ function Login() {
     navigate('/email-ver', { state: { forgotPassword: true } });
   };
 
-  const handleGoogleAuth = () => {
-    // Redirect to Google OAuth URL
-    window.location.href = `${config.apiBaseUrl}/auth/google`;
+  const handleGoogleSignIn = async () => {
+    try {
+      // Redirect to Google OAuth in the same window
+      window.location.href = config.googleAuthUrl;
+    } catch (err) {
+      setError('Google sign in failed. Please try again.');
+    }
   };
 
   return (
@@ -149,7 +153,7 @@ function Login() {
         </div>
 
         <button 
-          onClick={handleGoogleAuth}
+          onClick={handleGoogleSignIn}
           className="w-full flex items-center justify-center gap-2 border rounded-md py-2 bg-white hover:bg-gray-100 transition mb-4"
         >
           <img src={Google} alt="Google" className="w-5 h-5" />

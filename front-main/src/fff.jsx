@@ -1,3 +1,17 @@
+<Router>
+      <Routes>
+        <Route path="/" element={<Navbar />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/email-ver" element={<EmailVer />} />
+        <Route path="/ver-code" element={<VerCode />} />
+        <Route path="/helloworld" element={<HelloWorld />} />
+        <Route path="/changepass" element={<ChangePassword />} />
+      </Routes>
+    </Router>
+
+
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './navbar';
@@ -14,7 +28,7 @@ const Home = () => {
       <Navbar />
       <div className="min-h-screen bg-[#F5F5F5] py-8">
         {/* Hotels Section */}
-        <div className="mb-16">
+        <div className="mb-12">
           <div className="flex justify-between items-center px-6 mb-6">
             <h2 className="text-2xl font-bold">Featured Hotels</h2>
             <button 
@@ -28,7 +42,7 @@ const Home = () => {
         </div>
 
         {/* Cars Section */}
-        <div className="mb-16">
+        <div className="mb-12">
           <div className="flex justify-between items-center px-6 mb-6">
             <h2 className="text-2xl font-bold">Featured Cars</h2>
             <button 
@@ -42,7 +56,7 @@ const Home = () => {
         </div>
 
         {/* Rentals Section */}
-        <div className="mb-16">
+        <div className="mb-12">
           <div className="flex justify-between items-center px-6 mb-6">
             <h2 className="text-2xl font-bold">Featured Rentals</h2>
             <button 
@@ -55,28 +69,3 @@ const Home = () => {
           <RentalCardRow />
         </div>
       </div>
-
-      {/* Footer Section */}
-      <footer className="w-full bg-gray-200 py-8 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between">
-          <div className="mb-6 md:mb-0">
-            <h2 className="text-2xl font-bold text-gray-800">TravelEase</h2>
-            <p className="text-gray-600 text-sm">Your trusted travel company across Algeria</p>
-          </div>
-          
-          <div className="flex flex-col items-end">
-            <h3 className="font-medium text-gray-800 mb-2">Assistance</h3>
-            <ul className="text-right">
-              <li className="text-gray-600 text-sm mb-1">Helpdesk</li>
-              <li className="text-gray-600 text-sm mb-1">Support team</li>
-              <li className="text-gray-600 text-sm">User manual</li>
-            </ul>
-          </div>
-        </div>
-      </footer>
-    </>
-  );
-};
-
-export default Home;
-

@@ -1,68 +1,39 @@
 import React from 'react';
 
-const RectangleCard = () => {
+const RectangleCard = ({ image, name, location, price, type = 'hotel' }) => {
   return (
-    <div style={{ 
-      width: '250px',
-      borderRadius: '8px',
-      overflow: 'hidden',
-      backgroundColor: 'white',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
-      flex: '0 0 auto'
-    }}>
+    <div className="w-[250px] rounded-lg overflow-hidden bg-white shadow flex-none">
       {/* Photo Box */}
-      <div style={{
-        width: '100%',
-        height: '180px',
-        backgroundColor: '#e5e7eb',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden'
-      }}>
-        <span style={{ color: '#6b7280' }}>Hotel Image</span>
+      <div className="w-full h-[180px] bg-gray-200 flex items-center justify-center overflow-hidden">
+        {image ? (
+          <img 
+            src={image} 
+            alt={name} 
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <span className="text-gray-500">{type.charAt(0).toUpperCase() + type.slice(1)} Image</span>
+        )}
       </div>
 
       {/* Content Area */}
-      <div style={{
-        padding: '12px 16px'
-      }}>
+      <div className="p-3 p-4">
         {/* Hotel Name */}
-        <h3 style={{ 
-          margin: '0 0 4px 0',
-          fontSize: '16px',
-          fontWeight: '600',
-          color: '#111827'
-        }}>
-          Hotel name
+        <h3 className="m-0 mb-1 text-base font-semibold text-gray-900">
+          {name || `${type.charAt(0).toUpperCase() + type.slice(1)} name`}
         </h3>
 
         {/* Location */}
-        <p style={{ 
-          margin: '0 0 8px 0',
-          fontSize: '14px',
-          color: '#6b7280'
-        }}>
-          Constantine
+        <p className="m-0 mb-2 text-sm text-gray-500">
+          {location || 'Constantine'}
         </p>
 
         {/* Price Row */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <p style={{ 
-            margin: 0,
-            fontSize: '14px',
-            color: '#111827'
-          }}>
-            From...2000dzd/night
+        <div className="flex items-center justify-between">
+          <p className="m-0 text-sm text-gray-900">
+            {price || `From ${type === 'hotel' ? '8000dzd/night' : type === 'car' ? '6000dzd/day' : '10000dzd/month'}`}
           </p>
-          <span style={{
-            color: '#111827',
-            fontSize: '18px'
-          }}>
+          <span className="text-gray-900 text-lg">
             ›
           </span>
         </div>

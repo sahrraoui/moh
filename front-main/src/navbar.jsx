@@ -7,16 +7,31 @@ import { useRef } from 'react';
 import { useCallback } from 'react';
 import Login from './login';
 import SignUp from './signup';
-import Hotelcardrow from './HotelCardRow';
+
 function Navbar() {
   const [user, setUser] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        if (parsedUser && typeof parsedUser === 'object') {
+          setUser(parsedUser);
+        } else {
+          // If the parsed data is not a valid user object, clear it
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        // Clear invalid data
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
     }
   }, []);
 
@@ -27,24 +42,51 @@ function Navbar() {
     navigate('/login');
   };
 
+  const isActivePath = (path) => {
+    return location.pathname === path;
+  };
+
   return (
     <>
       <nav className="shadow-md">
         <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
           <div className="relative flex h-16 items-center justify-between">
             <div className="flex items-center">
-              <span className="text-black text-lg font-bold">TravelEase</span>
+              <span 
+                className="text-black text-lg font-bold cursor-pointer" 
+                onClick={() => navigate('/')}
+              >
+                TravelEase
+              </span>
             </div>
             <div className="hidden sm:ml-6 sm:block">
               <div className="flex space-x-8">
-                <button className="text-black px-3 py-1 rounded-lg text-lg font-medium hover:bg-gray-100 hover:text-xl transition-all duration-300">
+                <button 
+                  onClick={() => navigate('/hotels')}
+                  className={`text-black px-3 py-1 rounded-lg text-lg font-medium hover:bg-gray-100 hover:text-xl transition-all duration-300 ${
+                    isActivePath('/hotels') ? 'bg-gray-100' : ''
+                  }`}
+                >
                   Hotels
                 </button>
-                <button className="text-black px-3 py-1 rounded-lg text-lg font-medium hover:bg-gray-100 hover:text-xl transition-all duration-300">
+                <button 
+                  onClick={() => navigate('/cars')}
+                  className={`text-black px-3 py-1 rounded-lg text-lg font-medium hover:bg-gray-100 hover:text-xl transition-all duration-300 ${
+                    isActivePath('/cars') ? 'bg-gray-100' : ''
+                  }`}
+                >
                   Cars
                 </button>
-                <button className="text-black px-3 py-1 rounded-lg text-lg font-medium hover:bg-gray-100 hover:text-xl transition-all duration-300">
-                  Rental
+                <button 
+                  onClick={() => {
+                    console.log("Navigating to /rentals");
+                    navigate('/rentals');
+                  }}
+                  className={`text-black px-3 py-1 rounded-lg text-lg font-medium hover:bg-gray-100 hover:text-xl transition-all duration-300 ${
+                    isActivePath('/rentals') ? 'bg-gray-100' : ''
+                  }`}
+                >
+                  Rentals
                 </button>
               </div>
             </div>
@@ -119,20 +161,38 @@ function Navbar() {
         {isMobileMenuOpen && (
           <div className="sm:hidden bg-[#E61E51]">
             <div className="px-2 pt-2 pb-3 space-y-2">
-              <button className="w-full bg-[#E61E51] text-white px-4 py-3 rounded-lg text-lg font-medium hover:bg-rose-800 transition-colors duration-300">
+              <button 
+                onClick={() => {
+                  navigate('/hotels');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full bg-[#E61E51] text-white px-4 py-3 rounded-lg text-lg font-medium hover:bg-rose-800 transition-colors duration-300"
+              >
                 Hotels
               </button>
-              <button className="w-full bg-[#E61E51] text-white px-4 py-3 rounded-lg text-lg font-medium hover:bg-rose-800 transition-colors duration-300">
+              <button 
+                onClick={() => {
+                  navigate('/cars');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full bg-[#E61E51] text-white px-4 py-3 rounded-lg text-lg font-medium hover:bg-rose-800 transition-colors duration-300"
+              >
                 Cars
               </button>
-              <button className="w-full bg-[#E61E51] text-white px-4 py-3 rounded-lg text-lg font-medium hover:bg-rose-800 transition-colors duration-300">
-                Rental
+              <button 
+                onClick={() => {
+                  console.log("Navigating to /rentals from mobile");
+                  navigate('/rentals');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full bg-[#E61E51] text-white px-4 py-3 rounded-lg text-lg font-medium hover:bg-rose-800 transition-colors duration-300"
+              >
+                Rentals
               </button>
             </div>
           </div>
         )}
       </nav>
-      <Hotelcardrow/>
     </>
   );
 }
