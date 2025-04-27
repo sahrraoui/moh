@@ -39,6 +39,18 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isEmailVerified: {
+    type: Boolean,
+    default: function() {
+      // Email is verified by default if account is activated
+      return this.isActivated;
+    }
+  },
+  newEmail: {
+    type: String,
+    trim: true,
+    lowercase: true
+  },
   role: {
     type: String,
     enum: ['user', 'property_owner', 'admin'],

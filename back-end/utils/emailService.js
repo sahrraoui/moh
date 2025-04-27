@@ -1,98 +1,12 @@
-// File: utils/emailService.js
-const nodemailer = require('nodemailer');
-const { google } = require('googleapis');
-const Token = require('../models/Token');
-const crypto = require('crypto');
-
-// OAuth2 configuration from environment variables
-const CLIENT_ID = process.env.OAUTH_CLIENT_ID;
-const CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET;
-const REDIRECT_URL = process.env.OAUTH_REDIRECT_URL;
-const REFRESH_TOKEN = process.env.OAUTH_REFRESH_TOKEN;
-const EMAIL_USER = process.env.EMAIL_USER;
-const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME;
-
-// Create OAuth2 client
-const oAuth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URL);
-oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
-
-// Rest of the email service code remains the same...
-/**
- * Get transporter with OAuth2 authentication
- */
-const getTransporter = async () => {
-  try {
-    const accessToken = await oAuth2Client.getAccessToken();
-    
-    return nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        type: 'OAuth2',
-        user: EMAIL_USER,
-        clientId: CLIENT_ID,
-        clientSecret: CLIENT_SECRET,
-        refreshToken: REFRESH_TOKEN,
-        accessToken: accessToken.token
-      }
-    });
-  } catch (error) {
-    console.error('Failed to create email transporter:', error);
-    throw error;
-  }
-};
+// Add this function to the existing emailService.js file
 
 /**
- * Generate OTP and save it to Token model
- * @param {string} userId - User ID
- * @param {string} type - Token type ('activation' or 'passwordReset')
- * @returns {string} The generated OTP
- */
-exports.generateOTP = async (userId, type) => {
-  // Generate 6-digit OTP
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  
-  // Hash OTP
-  const hashedOTP = crypto.createHash('sha256').update(otp).digest('hex');
-  
-  // Save token to database
-  await Token.findOneAndDelete({ userId, type }); // Delete any existing tokens
-  await Token.create({
-    userId,
-    token: hashedOTP,
-    type
-  });
-  
-  return otp;
-};
-
-/**
- * Verify OTP
- * @param {string} userId - User ID
- * @param {string} otp - One-time password to verify
- * @param {string} type - Token type ('activation' or 'passwordReset')
- * @returns {boolean} True if OTP is valid
- */
-exports.verifyOTP = async (userId, otp, type) => {
-  // Hash provided OTP
-  const hashedOTP = crypto.createHash('sha256').update(otp).digest('hex');
-  
-  // Find token
-  const token = await Token.findOne({
-    userId,
-    token: hashedOTP,
-    type
-  });
-  
-  return !!token; // Return true if token exists
-};
-
-/**
- * Send activation email with OTP
+ * Send email verification code for email change
  * @param {Object} options - Email options
- * @param {string} options.email - Recipient email
+ * @param {string} options.email - Recipient email (new email)
  * @param {string} options.otp - One-time password code
  */
-exports.sendActivationEmail = async (options) => {
+exports.sendEmailChangeVerification = async (options) => {
   try {
     const transporter = await getTransporter();
     
@@ -100,51 +14,31 @@ exports.sendActivationEmail = async (options) => {
     const mailOptions = {
       from: `"${EMAIL_FROM_NAME}" <${EMAIL_USER}>`,
       to: options.email,
-      subject: 'Activate Your Travlease Account',
-      html: generateEmailTemplate('Account Activation', options.otp)
+      subject: 'Verify Your New Email Address - Travlease',
+      html: generateEmailTemplate('Email Change Verification', options.otp)
     };
 
     // Send email
     return await transporter.sendMail(mailOptions);
   } catch (error) {
-    console.error('Error sending activation email:', error);
+    console.error('Error sending email verification:', error);
     throw error;
   }
 };
 
-/**
- * Send OTP email for password reset
- * @param {Object} options - Email options
- * @param {string} options.email - Recipient email
- * @param {string} options.otp - One-time password code
- */
-exports.sendOTPEmail = async (options) => {
-  try {
-    const transporter = await getTransporter();
-    
-    // Email content
-    const mailOptions = {
-      from: `"${EMAIL_FROM_NAME}" <${EMAIL_USER}>`,
-      to: options.email,
-      subject: 'Password Reset Code - Travlease',
-      html: generateEmailTemplate('Password Reset Code', options.otp)
-    };
-
-    // Send email
-    return await transporter.sendMail(mailOptions);
-  } catch (error) {
-    console.error('Error sending reset email:', error);
-    throw error;
-  }
-};
-
-/**
- * Generate email template
- * @param {string} title - Email title
- * @param {string} otp - One-time password
- * @returns {string} HTML email template
- */
+// Update the existing generateEmailTemplate function to handle email change type
+// This would be an extension to the existing generateEmailTemplate function
 function generateEmailTemplate(title, otp) {
+  let customMessage = '';
+  
+  if (title === 'Email Change Verification') {
+    customMessage = 'You requested to change your email address for your Travlease account. Please use the following one-time password (OTP) to verify your new email:';
+  } else if (title === 'Password Reset Code') {
+    customMessage = 'You requested a password reset for your Travlease account. Please use the following one-time password (OTP) to verify your identity:';
+  } else {
+    customMessage = 'Thank you for registering with Travlease! Please use the following one-time password (OTP) to verify your identity:';
+  }
+  
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -299,10 +193,7 @@ function generateEmailTemplate(title, otp) {
                         <td>
                           <h1>${title}</h1>
                           <p>Hello,</p>
-                          <p>${title === 'Password Reset Code' 
-                            ? 'You requested a password reset for your Travlease account.' 
-                            : 'Thank you for registering with Travlease!'} 
-                            Please use the following one-time password (OTP) to verify your identity:</p>
+                          <p>${customMessage}</p>
                           
                           <div class="otp-container">
                             <div class="otp-code">${otp}</div>

@@ -12,7 +12,7 @@ const TokenSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['activation', 'passwordReset'],
+    enum: ['activation', 'passwordReset', 'emailChange'],
     required: true
   },
   createdAt: {
