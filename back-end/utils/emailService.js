@@ -1,4 +1,164 @@
-// Add this function to the existing emailService.js file
+const nodemailer = require('nodemailer');
+const Token = require('../models/Token');
+const crypto = require('crypto');
+
+// Environment variables
+const EMAIL_SERVICE = process.env.EMAIL_SERVICE;
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD;
+const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME;
+const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID;
+const OAUTH_CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET;
+const OAUTH_REFRESH_TOKEN = process.env.OAUTH_REFRESH_TOKEN;
+
+/**
+ * Get email transporter
+ * @returns {Object} Nodemailer transporter
+ */
+async function getTransporter() {
+  // Use OAuth2 if refresh token is available, otherwise use password
+  if (OAUTH_REFRESH_TOKEN) {
+    return nodemailer.createTransport({
+      service: EMAIL_SERVICE,
+      auth: {
+        type: 'OAuth2',
+        user: EMAIL_USER,
+        clientId: OAUTH_CLIENT_ID,
+        clientSecret: OAUTH_CLIENT_SECRET,
+        refreshToken: OAUTH_REFRESH_TOKEN
+      }
+    });
+  } else {
+    return nodemailer.createTransport({
+      service: EMAIL_SERVICE,
+      auth: {
+        user: EMAIL_USER,
+        pass: EMAIL_PASSWORD
+      }
+    });
+  }
+}
+
+/**
+ * Generate OTP for specified purpose and save to database
+ * @param {string} userId - User ID
+ * @param {string} purpose - Purpose of OTP (activation, passwordReset, etc.)
+ * @returns {string} Generated OTP
+ */
+exports.generateOTP = async (userId, purpose) => {
+  try {
+    // Generate a 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Hash the OTP for storage
+    const hashedOTP = crypto.createHash('sha256').update(otp).digest('hex');
+    
+    // Set expiry time (10 minutes)
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+    
+    // Delete any existing tokens for this user and purpose
+    await Token.deleteMany({ userId, type: purpose });
+    
+    // Save new token
+    await Token.create({
+      userId,
+      token: hashedOTP,
+      type: purpose,
+      createdAt: new Date()
+    });
+    
+    return otp;
+  } catch (error) {
+    console.error('Error generating OTP:', error);
+    throw error;
+  }
+};
+
+/**
+ * Verify OTP for specified purpose
+ * @param {string} userId - User ID
+ * @param {string} otp - OTP to verify
+ * @param {string} purpose - Purpose of OTP
+ * @returns {boolean} Whether OTP is valid
+ */
+exports.verifyOTP = async (userId, otp, purpose) => {
+  try {
+    // Hash the provided OTP
+    const hashedOTP = crypto.createHash('sha256').update(otp).digest('hex');
+    
+    // Find token in database
+    const token = await Token.findOne({
+      userId,
+      token: hashedOTP,
+      type: purpose
+    });
+    
+    if (!token) {
+      return false;
+    }
+    
+    // Delete token after successful verification (one-time use)
+    await Token.deleteOne({ _id: token._id });
+    
+    return true;
+  } catch (error) {
+    console.error('Error verifying OTP:', error);
+    return false;
+  }
+};
+
+/**
+ * Send OTP email for password reset
+ * @param {Object} options - Email options
+ * @param {string} options.email - Recipient email
+ * @param {string} options.otp - One-time password code
+ */
+exports.sendOTPEmail = async (options) => {
+  try {
+    const transporter = await getTransporter();
+    
+    // Email content
+    const mailOptions = {
+      from: `"${EMAIL_FROM_NAME}" <${EMAIL_USER}>`,
+      to: options.email,
+      subject: 'Password Reset Code - Travlease',
+      html: generateEmailTemplate('Password Reset Code', options.otp)
+    };
+
+    // Send email
+    return await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error('Error sending OTP email:', error);
+    throw error;
+  }
+};
+
+/**
+ * Send activation email with OTP
+ * @param {Object} options - Email options
+ * @param {string} options.email - Recipient email
+ * @param {string} options.otp - One-time password code
+ */
+exports.sendActivationEmail = async (options) => {
+  try {
+    const transporter = await getTransporter();
+    
+    // Email content
+    const mailOptions = {
+      from: `"${EMAIL_FROM_NAME}" <${EMAIL_USER}>`,
+      to: options.email,
+      subject: 'Activate Your Account - Travlease',
+      html: generateEmailTemplate('Account Activation', options.otp)
+    };
+
+    // Send email
+    return await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error('Error sending activation email:', error);
+    throw error;
+  }
+};
 
 /**
  * Send email verification code for email change
